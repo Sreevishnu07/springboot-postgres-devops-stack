@@ -1,0 +1,42 @@
+services:
+  springboot-app:
+    build:
+      context: ./spring-app
+    container_name: springboot-app-container
+    ports: 
+      - "8083:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/my_db
+      SPRING_DATASOURCE_USERNAME: myuser 
+      SPRING_DATASOURCE_PASSWORD: mypassword
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - backend-network
+
+  postgres:
+    image: postgres:17
+    container_name: postgres-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: my_db
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U myuser -d my_db"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+volumes:
+  postgres_data:
+networks:
+  backend-network:
